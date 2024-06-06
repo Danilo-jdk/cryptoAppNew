@@ -5,6 +5,8 @@ import { Picker } from "@react-native-picker/picker";
 import { useCrypto } from "../../Context/CryptoContext";
 import { Ionicons } from "@expo/vector-icons";
 
+import ConfirmModal from "../../components/ConfirmModal";
+
 export default function Portfolio() {
     const { cryptos, getCryptos, portfolio, setPortfolio, salvaPortfolio, rimuoviPortfolio  } = useCrypto();
 
@@ -13,7 +15,20 @@ export default function Portfolio() {
     const [quantita, setQuantita] = useState('');
     const [ selectedCrypto, setSelectedCrypto] = useState('');
 
-    const [isButtonEnabled, setIsButtonEnabled] = useState(false)
+    const [isButtonEnabled, setIsButtonEnabled] = useState(false);
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+
+    const showModal = (item) => {
+      setItemToDelete(item);
+      setModalVisible(true);
+    }
+
+    const confirmDelete = (item) => {
+      setModalVisible(false);
+      removeCrypto(item);
+    }
 
     function filtraCrypto() {
         const cryptoFiltrate = cryptos.map((moneta) => moneta.symbol);
@@ -45,7 +60,16 @@ export default function Portfolio() {
         // resetto 
         setSelectedCrypto('');
         setQuantita('');
+    }
 
+    function removeCrypto(crypto) {
+      const indiceEsistente = portfolio.findIndex(moneta => moneta.crypto === crypto);
+
+      let portfolioAggiornato = [...portfolio];
+      portfolioAggiornato.splice(indiceEsistente, 1);
+
+      setPortfolio(portfolioAggiornato);
+      salvaPortfolio(portfolioAggiornato);
     }
 
     useEffect(() => {
@@ -76,6 +100,9 @@ export default function Portfolio() {
                 <Text style={[styled.testoMedioGrande, styled.testoBianco]}>
                   {moneta.quantita} {moneta.crypto}
                 </Text>
+                    <TouchableOpacity style={styled.containerMonetaPortfolio.btnTrash} onPress={() => showModal(moneta.crypto)}>
+                        <Ionicons name={"trash-outline"} size={30} color={"white"} />
+                    </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
@@ -93,18 +120,19 @@ export default function Portfolio() {
             setQuantita(filteredText);
           }}
         />
-        <View style={styled.pickerContainer}>
+        {/* <View style={styled.pickerContainer}> */}
             <Picker
             selectedValue={selectedCrypto}
             onValueChange={(itemValue, itemIndex) => setSelectedCrypto(itemValue)}
-            style={styled.picker}
+            // style={styled.picker}
+            mode="dropdown"
             >
-            <Picker.Item label="Seleziona crypto" value="" color="white" />
+            <Picker.Item label="Seleziona crypto" value="" color="black" />
             {valoriSelect.map((crypto) => (
-                <Picker.Item key={crypto} label={crypto} value={crypto} color="white" />
+                <Picker.Item key={crypto} label={crypto} value={crypto} color="black" />
             ))}
             </Picker>
-        </View>
+        {/* </View> */}
         <TouchableOpacity
           onPress={aggiungiAlPortfolio}
           style={[styled.btn, {opacity: isButtonEnabled ? 1 : 0.3}]}
@@ -118,6 +146,13 @@ export default function Portfolio() {
         </TouchableOpacity>
       </View>
       </View>
+
+        <ConfirmModal 
+          isVisible={modalVisible}
+          onConfirm={confirmDelete}
+          onCancel={() => setModalVisible(false)}
+          item={itemToDelete}
+        />
       </>
     )
 }
