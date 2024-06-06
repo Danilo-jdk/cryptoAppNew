@@ -32,7 +32,6 @@ export default function Portfolio() {
 
     function filtraCrypto() {
         const cryptoFiltrate = cryptos.map((moneta) => moneta.symbol);
-        // console.log('cryptoFiltrate: ', cryptoFiltrate);
         setValoriSelect(cryptoFiltrate);
     }
 
@@ -63,11 +62,12 @@ export default function Portfolio() {
     }
 
     function removeCrypto(crypto) {
+      // console.log('dentro remove', crypto)
       const indiceEsistente = portfolio.findIndex(moneta => moneta.crypto === crypto);
 
       let portfolioAggiornato = [...portfolio];
       portfolioAggiornato.splice(indiceEsistente, 1);
-
+    
       setPortfolio(portfolioAggiornato);
       salvaPortfolio(portfolioAggiornato);
     }

@@ -6,6 +6,8 @@ import CryptoApi from "../../Api/CryptoApi";
 
 import { useCrypto } from "../../Context/CryptoContext";
 
+import NetInfo from "@react-native-community/netinfo";
+
 export default function Home() {
   const {cryptos, getCryptos, portfolio} = useCrypto();
 
@@ -16,6 +18,8 @@ export default function Home() {
 
   const [euro, setEuro] = useState(0);
   const [valuta, setValuta ] = useState('dollaro');
+
+  const [isOffline, setIsOffline] = useState(false);
 
   const getEuro = async () => {
     try {
@@ -61,7 +65,7 @@ export default function Home() {
 
   function calcolaValorePortfolio() {
     let totale = 0;
-console.log('portfolio: ', portfolio)
+// console.log('portfolio: ', portfolio)
 
     // portfolio.forEach(moneta => {
     //   console.log('moneta.symbol: ', moneta.crypto)
@@ -73,23 +77,29 @@ console.log('portfolio: ', portfolio)
     // });
 
     portfolio.map(moneta => {
-      console.log('moneta.symbol: ', moneta)
+      // console.log('moneta.symbol: ', moneta)
       const crypto = cryptos.find(item => item.symbol === moneta.crypto);
-      console.log('crypto: ', crypto)
+      // console.log('crypto: ', crypto)
       if(crypto) {
         totale += parseFloat(moneta.quantita) * crypto.quote.USD.price;
       }
     });
 
 
-    console.log('totale ', totale)
+    // console.log('totale ', totale)
     setValorePortfolio(totale);
   }
 
   useEffect(() => {
     getCryptos();
     getEuro();
-  }, [getCryptos]);
+
+    const unsubscribe = NetInfo.addEventListener( state => {
+      setIsOffline(state.isConnected === false)
+    });
+    return () => unsubscribe();
+
+  }, []);
 
   useEffect(() => {
     calcolaValorePortfolio();
@@ -104,61 +114,70 @@ console.log('portfolio: ', portfolio)
   }, [ cryptos ])
 
   return (
+    <>
+   { isOffline ? (
+    <View>
+      <Text>Sei Offline</Text>
+    </View>
+   ) : (
     <View style={GlobalStyles.container}>
-      <View style={[styled.contenitorePortfolio]}>
-        <Text style={styled.testoGrigio}>il mio saldo</Text>
-        <TouchableOpacity onPress={() => valuta === 'dollaro' ? convertiValuta('euro') : convertiValuta('dollaro')}>
-            <Text style={[styled.testoBianco, styled.testoGrande]}>{valuta === 'dollaro' ? '$' : '€'} {valorePortfolio.toFixed(2)}</Text>
-        </TouchableOpacity>
-        <Text style={[GlobalStyles.testoBianco]}>
-          valore Euro {euro.toFixed(3)}
-        </Text>
-      </View>
-      <View style={styled.contenitoreLista}>
-        <View style={styled.contenitoreTitolo}>
-          <View>
-            <Text style={[styled.testoBianco, styled.testoMedio]}>
-              Elenco crypto
-            </Text>
-            <Text style={styled.testoBianco}>Top { mostraTutto ? '100' : '5' }</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={styled.contenitoreBtn}
-            onPress={accorciaListaCrypto}
-            >
-            <Text style={[styled.testoBianco, styled.testoPiccolo]}>
-              {mostraTutto ? 'Mostra meno' : 'Mostra tutto'}
-            </Text>
-            <Ionicons name={mostraTutto ? 'eye-off-outline' : 'eye-outline'} size={22} color="white" />
-          </TouchableOpacity>
+    <View style={[styled.contenitorePortfolio]}>
+      <Text style={styled.testoGrigio}>il mio saldo</Text>
+      <TouchableOpacity onPress={() => valuta === 'dollaro' ? convertiValuta('euro') : convertiValuta('dollaro')}>
+          <Text style={[styled.testoBianco, styled.testoGrande]}>{valuta === 'dollaro' ? '$' : '€'} {valorePortfolio.toFixed(2)}</Text>
+      </TouchableOpacity>
+      <Text style={[GlobalStyles.testoBianco]}>
+        valore Euro {euro.toFixed(3)}
+      </Text>
+    </View>
+    <View style={styled.contenitoreLista}>
+      <View style={styled.contenitoreTitolo}>
+        <View>
+          <Text style={[styled.testoBianco, styled.testoMedio]}>
+            Elenco crypto
+          </Text>
+          <Text style={styled.testoBianco}>Top { mostraTutto ? '100' : '5' }</Text>
         </View>
 
-     <ScrollView>
-      {cryptovalute.map((moneta, index) => (
-            <View style={styled.contenitoreCrypto} key={index}>
-              <View>
-                <Text style={[styled.testoMedio, styled.testoBianco]}>
-                  {moneta.symbol}
-                </Text>
-                <Text style={styled.testoGrigio}>{moneta.name}</Text>
-              </View>
-              <View style={styled.contenitoreCrypto.contenitoreValore}>
-                <Text style={[styled.testoMedio, styled.testoBianco]}>
-                  $ {moneta.quote.USD.price.toFixed(2)}
-                </Text>
-                <View style={styled.contenitoreChange}>
-                  <Text style={styled.testoGrigio}>24h </Text>
-                  <Text style={moneta.quote.USD.percent_change_24h > 0 ? styled.testoVerde : styled.testoRosso}>{moneta.quote.USD.percent_change_24h.toFixed(2)}% </Text>
-                  <Text style={styled.testoGrigio}> || 7d </Text>
-                  <Text style={moneta.quote.USD.percent_change_7d > 0 ? styled.testoVerde : styled.testoRosso}>{moneta.quote.USD.percent_change_7d.toFixed(2)}%</Text>
-                </View>
+        <TouchableOpacity 
+          style={styled.contenitoreBtn}
+          onPress={accorciaListaCrypto}
+          >
+          <Text style={[styled.testoBianco, styled.testoPiccolo]}>
+            {mostraTutto ? 'Mostra meno' : 'Mostra tutto'}
+          </Text>
+          <Ionicons name={mostraTutto ? 'eye-off-outline' : 'eye-outline'} size={22} color="white" />
+        </TouchableOpacity>
+      </View>
+
+   <ScrollView>
+    {cryptovalute.map((moneta, index) => (
+          <View style={styled.contenitoreCrypto} key={index}>
+            <View>
+              <Text style={[styled.testoMedio, styled.testoBianco]}>
+                {moneta.symbol}
+              </Text>
+              <Text style={styled.testoGrigio}>{moneta.name}</Text>
+            </View>
+            <View style={styled.contenitoreCrypto.contenitoreValore}>
+              <Text style={[styled.testoMedio, styled.testoBianco]}>
+                $ {moneta.quote.USD.price.toFixed(2)}
+              </Text>
+              <View style={styled.contenitoreChange}>
+                <Text style={styled.testoGrigio}>24h </Text>
+                <Text style={moneta.quote.USD.percent_change_24h > 0 ? styled.testoVerde : styled.testoRosso}>{moneta.quote.USD.percent_change_24h.toFixed(2)}% </Text>
+                <Text style={styled.testoGrigio}> || 7d </Text>
+                <Text style={moneta.quote.USD.percent_change_7d > 0 ? styled.testoVerde : styled.testoRosso}>{moneta.quote.USD.percent_change_7d.toFixed(2)}%</Text>
               </View>
             </View>
-          ))}
-     </ScrollView>
-      </View>
+          </View>
+        ))}
+   </ScrollView>
     </View>
+  </View>
+   )
+  }
+ </>
   );
 }
 
